@@ -115,13 +115,22 @@ static void _AcceptCallBack(CFSocketRef socket, CFSocketCallBackType type, CFDat
 - (void)netServiceDidPublish:(NSNetService *)sender
 {
 	assert(sender == _netService);
-	NSLog(@"%@", NSStringFromSelector(_cmd));
+#if USE_SDDLOG
+	SDDLog(@"%@", NSStringFromSelector(_cmd));
+#else
+    NSLog(@"%@", NSStringFromSelector(_cmd));
+#endif
 }
 
 - (void)netService:(NSNetService *)sender didNotPublish:(NSDictionary *)errorDict
 {
 	assert(sender == _netService);
-	NSLog(@"%@", NSStringFromSelector(_cmd));
+#if USE_SDDLOG
+	SDDLog(@"%@", NSStringFromSelector(_cmd));
+#else
+    NSLog(@"%@", NSStringFromSelector(_cmd));
+#endif
+
 }
 
 - (BOOL) isBonjourEnabled

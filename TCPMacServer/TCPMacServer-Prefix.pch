@@ -6,4 +6,6 @@
 
 #ifdef __OBJC__
     #import <Cocoa/Cocoa.h>
+extern void SDDLog(NSString *format, ...);
+#define USE_SDDLOG 1
 #endif

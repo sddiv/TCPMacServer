@@ -8,6 +8,8 @@
 
 #import <Cocoa/Cocoa.h>
 
+extern void SDDLog(NSString *format, ...);
+
 @interface SDDAppDelegate : NSObject <NSApplicationDelegate>
 
 @property (assign) IBOutlet NSWindow *window;

@@ -1,6 +1,10 @@
 #import "TCPConnection.h"
 
+#if USE_SDDLOG
+#define REPORT_ERROR(__FORMAT__, ...) SDDLog(@"%s: %s\n", __FUNCTION__, [[NSString stringWithFormat:__FORMAT__, __VA_ARGS__] UTF8String])
+#else
 #define REPORT_ERROR(__FORMAT__, ...) printf("%s: %s\n", __FUNCTION__, [[NSString stringWithFormat:__FORMAT__, __VA_ARGS__] UTF8String])
+#endif
 
 #ifndef __DELEGATE_IVAR__
 #define __DELEGATE_IVAR__ _delegate

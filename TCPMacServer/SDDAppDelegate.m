@@ -9,7 +9,7 @@
 #import "SDDAppDelegate.h"
 #import "TCPServer.h"
 
-@interface SDDAppDelegate () <TCPServerDelegate>
+@interface SDDAppDelegate () <TCPServerDelegate, TCPConnectionDelegate>
 
 @property (nonatomic, strong) TCPServer *tcpServer;
 
@@ -20,6 +20,8 @@
 -(IBAction)startServerPressed:(NSButton*)startButton;
 
 -(IBAction)stopServerPressed:(NSButton*)stopButton;
+
+-(void)log:(NSString*)format, ... NS_FORMAT_FUNCTION(1, 2);
 
 @end
 
@@ -60,17 +62,19 @@
 
 - (BOOL) server:(TCPServer*)server shouldAcceptConnectionFromAddress:(const struct sockaddr*)address
 {
-    [self log:@"Will accept connection from address: %s %ui", address->sa_data, address->sa_family];
+    [self log:@"Will ACCEPT NEW connection"];
     return YES;
 }
 
 - (void) server:(TCPServer*)server didOpenConnection:(TCPServerConnection*)connection
 {
+    connection.delegate = self;
     [self log:@"Did open connection: %@", connection];
 }
 
 - (void) server:(TCPServer*)server didCloseConnection:(TCPServerConnection*)connection
 {
+    connection.delegate = nil;
     [self log:@"Did close connection: %@", connection];
 }
 
@@ -92,7 +96,7 @@
     [dateFormatter setDateFormat:@"yyyy-MM-dd HH:mm:ss.SSS"];
     NSString *dateString = [dateFormatter stringFromDate:[NSDate date]];
     
-    return [NSString stringWithFormat:@"[%@ %@] ", dateString, [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleName"]];
+    return [NSString stringWithFormat:@"%@> ", dateString];
 }
 
 -(void)log:(NSString*)format, ... NS_FORMAT_FUNCTION(1, 2)
@@ -104,7 +108,30 @@
     va_end(args);
     
     // set to textview
-    [self.serverLogger setString:[NSString stringWithFormat:@"%@%@ %@\n", self.serverLogger.string, [self commonString], string]];
+    [[NSOperationQueue mainQueue] addOperationWithBlock:^{
+        [self.serverLogger setString:[NSString stringWithFormat:@"%@%@ %@\n", self.serverLogger.string, [self commonString], string]];
+    }];
+}
+
+#pragma mark - TCPConnectionDelegate
+- (void) connectionDidFailOpening:(TCPConnection*)connection
+{
+    [self log:@"connection did fail opening: %u:%hu", (unsigned int)connection.localIPv4Address, connection.localPort];
+}
+
+- (void) connectionDidOpen:(TCPConnection*)connection
+{
+    [self log:@"connection did open: %u:%hu", connection.localIPv4Address, connection.localPort];
+}
+
+- (void) connectionDidClose:(TCPConnection*)connection
+{
+    [self log:@"connection did close: %u:%hu", connection.localIPv4Address, connection.localPort];
+}
+
+- (void) connection:(TCPConnection*)connection didReceiveData:(NSData*)data
+{
+    [self log:@"Recieved %hu:%u data = %@", connection.localPort, (unsigned int)connection.localIPv4Address,[[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding]];
 }
 
 #pragma mark -
@@ -129,3 +156,21 @@
 }
 
 @end
+
+void SDDLog(NSString *format, ...)
+{
+    // convert to NSString
+    va_list args;
+    va_start(args, format);
+    NSString *string = [[NSString alloc] initWithFormat:format arguments:args];
+    va_end(args);
+    
+    // set to textview
+    SDDAppDelegate *appDelegate = (SDDAppDelegate*)[[NSApplication sharedApplication] delegate];
+    if([appDelegate isKindOfClass:[SDDAppDelegate class]])
+    {
+        [[NSOperationQueue mainQueue] addOperationWithBlock:^{
+            [appDelegate.serverLogger setString:[NSString stringWithFormat:@"%@%@ %@\n", appDelegate.serverLogger.string, [appDelegate commonString], string]];
+        }];
+    }
+}
