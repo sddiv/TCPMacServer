@@ -30,6 +30,18 @@
     // Insert code here to initialize your application
 }
 
+- (BOOL)applicationShouldTerminateAfterLastWindowClosed:(NSApplication *)sender
+{
+    return YES;
+}
+
+- (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication *)sender
+{
+    [self stopServerPressed:nil];
+    return NSTerminateNow;
+}
+
+#pragma mark - TCPServerDelegate
 - (void) serverDidStart:(TCPServer*)server
 {
     [self log:@"Server started"];
